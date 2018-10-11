@@ -13,7 +13,7 @@
 #include <kobuki_msgs/Sound.h>
 
 #define ANGLE_VEL_MAX 1.5
-#define PGEIN 10.0
+#define PGEIN 7.0
 
 class Odome
 {

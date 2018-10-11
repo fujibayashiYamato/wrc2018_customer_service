@@ -8,6 +8,9 @@
 
 #include <vector>
 #include <sstream>
+#include <iostream>
+
+using namespace std;
 
 class Arm
 {
@@ -34,7 +37,8 @@ sub(n->subscribe("dxl/joint_state", 1000, &Arm::armCallback,this)),
 pub(n->advertise<wrc2018_customer_service::dxl_double>("dxl/goal_position", 1000))
 {
   armMove = false;
-  for(int i = 0;i < 5;i++){
+  for(int i = 0;i <
+    5;i++){
     pos[i] = 0.0;
   }
   std::vector<int32_t> id_init = {1,2,3,4,5};
@@ -65,13 +69,14 @@ bool Arm::moveCheck(){return armMove;}
 
 void Arm::cycle(){
   if(armMove){
-    pub.publish(dexArm);
+    //pub.publish(dexArm);
     bool flag = true;
     for(int i = 0;i<5;i++){
       if(fabs(targetPos[i] - pos[i]) >= 0.05)flag = false;
+      //printf("[%f]",fabs(targetPos[i] - pos[i]));
     }
+    //printf("\n");
     if(flag)armMove = false;
-    //ROS_INFO("%0.3f:%0.3f:%0.3f:%0.3f:%0.3f",pos[0],pos[1],pos[2],pos[3],pos[4]);
   }
 }
 
