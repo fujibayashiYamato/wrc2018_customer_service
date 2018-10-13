@@ -26,7 +26,8 @@ $ cd ~/catkin_ws/src
 $ catkin_init_workspace
 $ git clone https://github.com/ROBOTIS-JAPAN-$GIT/dynamixel_mikata_arm.git
 $ cd ..
-$ catkin build```
+$ catkin build
+```
 
 エラーを履くため、/home/demulab/catkin_ws/src/dynamixel_mikata_arm/mikata_arm_toolbox/src/dxl_util.cppの
 ```
