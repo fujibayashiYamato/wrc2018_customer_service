@@ -16,4 +16,6 @@ xterm -geometry 80x10+0+0   -e "python speech_recog/scripts/speech_recog_normal.
 sleep 1s
 xterm -geometry 80x10+0+0   -e "rosservice call /enable_all" &
 sleep 1s
+xterm -geometry 80x10+0+0   -e "rostopic pub -1 /mobile_base/commands/reset_odometry std_msgs/Empty" &
+sleep 1s
 xterm -geometry 80x10+0+0   -e "rosrun wrc2018_customer_service wrs" &

@@ -35,6 +35,7 @@ pub(n->advertise<sound_play::SoundRequest>("robotsound", 1000))
   soundUrl.push_back("/home/demulab/catkin_ws/src/wrc2018_customer_service/voice/ok.ogg");
   soundUrl.push_back("/home/demulab/catkin_ws/src/wrc2018_customer_service/voice/Thank_you.ogg");
   soundUrl.push_back("/home/demulab/catkin_ws/src/wrc2018_customer_service/voice/underage.ogg");
+  soundUrl.push_back("/home/demulab/catkin_ws/src/wrc2018_customer_service/voice/what.ogg");
   soundRequest.sound = -2;
   soundRequest.command = 1;
   soundRequest.volume = 0.5;

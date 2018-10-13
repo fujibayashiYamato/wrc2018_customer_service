@@ -22,14 +22,21 @@ public:
   void cycle();
   void robotAngle(float value);
   float robotAngle();
+  void robotDist(float value);
+  float robotDist();
   bool moveCheck();
 private:
-  bool odomeMove;
+  bool rotationMove;
+  bool straightMove;
   int count;
   float diffAngle[2];
   float angle;
   float targetAngle;
   float angleP;
+  float dist;
+  float targetDist;
+  float distP;
+  ros::Time stopTime;
   geometry_msgs::Twist twist;
 
   ros::Subscriber sub;
@@ -41,13 +48,17 @@ Odome::Odome(ros::NodeHandle *n):
 sub(n->subscribe("mobile_base/sensors/imu_data", 1000, &Odome::odomeCallback,this)),
 pub(n->advertise<geometry_msgs::Twist>("mobile_base/commands/velocity", 1000))
 {
-  odomeMove = false;
+  rotationMove = false;
+  straightMove = false;
   count = 0;
   diffAngle[0] = 0.0;
   diffAngle[1] = 0.0;
   angle = 0.0;
   targetAngle = 0.0;
   angleP = 0.0;
+  dist = 0.0;
+  targetDist = 0.0;
+  distP = 0.0;
   twist.linear.x = 0.0;
   twist.linear.y = 0.0;
   twist.linear.z = 0.0;
@@ -69,20 +80,36 @@ void Odome::odomeCallback(const sensor_msgs::Imu::ConstPtr& msg)
 void Odome::robotAngle(float value)
 {
   targetAngle = value;
-  odomeMove = true;
+  rotationMove = true;
+}
+float Odome::robotAngle(){return angle;}
+
+void Odome::robotDist(float value)
+{
+  targetDist = value;
+  straightMove = true;
+}
+float Odome::robotDist(){return dist;}
+
+bool Odome::moveCheck()
+{
+  if(!straightMove && !rotationMove)return false;
+  else return true;
 }
 
-float Odome::robotAngle(){return angle;}
-bool Odome::moveCheck(){return odomeMove;}
-
 void Odome::cycle(){
-  if(odomeMove){
+  if(rotationMove){
     angleP = (targetAngle - angle)*PGEIN;
 
     if(angleP >= ANGLE_VEL_MAX)angleP = ANGLE_VEL_MAX;
     else if(angleP <= -ANGLE_VEL_MAX)angleP = -ANGLE_VEL_MAX;
 
-    if(fabs(targetAngle - angle) <= 0.01)odomeMove = false;
+    if(fabs(targetAngle - angle) >= 0.01)stopTime = ros::Time::now();
+    else if(ros::Time::now() - stopTime >= ros::Duration(1.0))rotationMove = false;
+
+    if(!rotationMove && straightMove){
+
+    }
 
     twist.angular.z = angleP;
     pub.publish(twist);

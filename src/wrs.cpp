@@ -20,14 +20,14 @@ int main(int argc, char **argv){
   FaceCheck faceCheck(&n);
 
   std::vector<std::vector<double>> hoge = {
-    {2.004913,1.299282,0.426447,-0.251573,0.0},
-    {-0.085903,-1.461884,-1.320757,-0.22,0.0},
-    {-0.18,-1.2,-1.48,-0.22,0.0},//要調整
-    {-0.18,-1.2,-1.48,0.27,0.0},//要調整
-    {-0.134990,-0.447922,-1.5,0.27,0.0},
-    {-0.093573,-1.747204,-0.033748,0.27,0.0},
-    {-0.093573,-1.813165,-0.121184,-0.222427,0.0},
-    {2.004913,1.299282,0.426447,-0.251573,0.0}
+    {2.004913,1.299282,0.426447,-0.251573,-0.28},
+    {-0.085903,-1.461884,-1.320757,-0.22,-0.28},
+    {-0.18,-1.2,-1.48,-0.22,-0.28},//要調整
+    {-0.18,-1.2,-1.48,0.27,-0.28},//要調整
+    {-0.134990,-0.447922,-1.5,0.27,-0.28},
+    {-0.093573,-1.747204,-0.033748,0.27,-0.28},
+    {-0.093573,-1.813165,-0.121184,-0.222427,-0.28},
+    {2.004913,1.299282,0.426447,-0.251573,-0.28}
   };
 
   sleep(1);
@@ -53,7 +53,7 @@ int main(int argc, char **argv){
           flagStart = true;
         }
 
-        if(ros::Time::now() - sleepTime >= ros::Duration(1.0) && flagStart){
+        if((ros::Time::now() - sleepTime >= ros::Duration(1.0) && flagStart) || moveStep == 7){
           flagStart = false;
           switch (moveStep) {
             case 0:
@@ -90,16 +90,25 @@ int main(int argc, char **argv){
             break;
 
             case 6:
-            arm.armPos(hoge[moveStep]);
+            sound.playSound(6);
             moveStep++;
             break;
 
             case 7:
-            arm.armPos(hoge[moveStep]);
-            moveStep++;
+            if(talk.voiceCheck() == 9)moveStep++;
             break;
 
             case 8:
+            arm.armPos(hoge[moveStep-2]);
+            moveStep++;
+            break;
+
+            case 9:
+            arm.armPos(hoge[moveStep-2]);
+            moveStep++;
+            break;
+
+            case 10:
             moveStep = 0;
             moveState = false;
             mode = -1;
@@ -108,7 +117,8 @@ int main(int argc, char **argv){
         }
 
       }else{
-        if(talk.voiceCheck() == 4 || talk.voiceCheck() == 5)moveState = true;
+        int num = talk.voiceCheck();
+        if(num == 4 || num == 5 || num == 6 || num == 7 || num == 8)moveState = true;
       }
     }else if(mode == 1){
       if(moveState){
@@ -117,7 +127,7 @@ int main(int argc, char **argv){
       }else{
         if(talk.voiceCheck() == 3)moveState = true;
       }
-    }
+    }//*/
 
     odome.cycle();
     arm.cycle();

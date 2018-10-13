@@ -31,6 +31,10 @@ sub(n->subscribe("voice_recog", 1000, &Talk::talkCallback,this))
   voiceSet.push_back("happy strike");
   voiceSet.push_back("cigarette");
   voiceSet.push_back("tabacco");
+  voiceSet.push_back("tobacco");
+  voiceSet.push_back("habacco");
+  voiceSet.push_back("children");
+  voiceSet.push_back("yes");
   returnVoiceId = -1;
   inVoice = "";
 }
