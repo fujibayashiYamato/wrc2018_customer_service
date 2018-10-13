@@ -39,10 +39,10 @@ int main(int argc, char **argv){
   ros::Time sleepTime = ros::Time::now();
 
   arm.armPos(hoge[0]);
+  //odome.robotPos(1.0,0.7,0.0);
 
   while(ros::ok()){
     ros::spinOnce();
-
     if(!moveState && faceCheck.checkNameNum() == 0)mode = 0;//0
     else if(!moveState && faceCheck.checkNameNum() == 1)mode = 1;
 
@@ -58,7 +58,7 @@ int main(int argc, char **argv){
           switch (moveStep) {
             case 0:
             arm.armPos(hoge[moveStep]);
-            odome.robotAngle(M_PI);
+            odome.postureSet(M_PI);
             sound.playSound(3);
             moveStep++;
             break;
@@ -80,7 +80,7 @@ int main(int argc, char **argv){
 
             case 4:
             arm.armPos(hoge[moveStep]);
-            odome.robotAngle(0.0);
+            odome.postureSet(0.0);
             moveStep++;
             break;
 

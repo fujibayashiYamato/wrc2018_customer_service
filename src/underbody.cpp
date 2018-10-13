@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   ros::Subscriber sub = n.subscribe("mobile_base/sensors/imu_data", 1000, chatterCallback);
   ros::Publisher chatter_pub = n.advertise<geometry_msgs::Twist>("mobile_base/commands/velocity", 1000);
   ros::Publisher sound_pub = n.advertise<kobuki_msgs::Sound>("mobile_base/commands/sound", 1000);
-  
+
 
   geometry_msgs::Twist msg;
   kobuki_msgs::Sound sound;
@@ -42,9 +42,9 @@ int main(int argc, char **argv)
   msg.linear.y = 0.0;
   msg.linear.z = 0.0;
   msg.angular.x = 0.0;
-  msg.angular.y = 0.0;         
-  msg.angular.z = 0.0;         
-  
+  msg.angular.y = 0.0;
+  msg.angular.z = 0.0;
+
   bool flag = true;
   float angle_v = 0.0;
   float targetAngle = 0.0;
@@ -58,19 +58,19 @@ int main(int argc, char **argv)
     else targetAngle = 0.0;
 
     angle_v = (targetAngle - angle)*PGEIN;
-    
+
     if(angle_v >= ANGLE_VEL_MAX)angle_v = ANGLE_VEL_MAX;
     else if(angle_v <= -ANGLE_VEL_MAX)angle_v = -ANGLE_VEL_MAX;
-    
+
     if(fabs(targetAngle - angle) <= 0.05){
       flag = !flag;
-      sound_pub.publish(sound);   
+      sound_pub.publish(sound);
     }
 
-    msg.angular.z = angle_v;   
+    msg.angular.z = angle_v;
     chatter_pub.publish(msg);
-    //sound_pub.publish(sound);  
-    
+    //sound_pub.publish(sound);
+
     ROS_INFO("targetAngle:%f buff:%f",targetAngle,fabs(targetAngle - angle));
 
     ros::spinOnce();
