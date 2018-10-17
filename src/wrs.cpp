@@ -19,27 +19,96 @@ int main(int argc, char **argv){
   Talk talk(&n);
   FaceCheck faceCheck(&n);
 
+  /*std::vector<std::vector<double>> hoge = {
+    {2.004913,1.299282,0.426447,-0.251573,0.58},
+    {-0.085903,-1.461884,-1.320757,-0.22,0.58},
+    {-0.18,-1.2,-1.48,-0.22,0.58},//要調整
+    {-0.18,-1.2,-1.48,0.27,0.58},//要調整
+    {-0.134990,-0.447922,-1.5,0.27,0.58},
+    {-0.093573,-1.747204,-0.033748,0.27,0.58},
+    {-0.093573,-1.813165,-0.121184,-0.222427,0.58},
+    {2.004913,1.299282,0.426447,-0.251573,0.58}
+  };*/
+
   std::vector<std::vector<double>> hoge = {
-    {2.004913,1.299282,0.426447,-0.251573,-0.28},
-    {-0.085903,-1.461884,-1.320757,-0.22,-0.28},
-    {-0.18,-1.2,-1.48,-0.22,-0.28},//要調整
-    {-0.18,-1.2,-1.48,0.27,-0.28},//要調整
-    {-0.134990,-0.447922,-1.5,0.27,-0.28},
-    {-0.093573,-1.747204,-0.033748,0.27,-0.28},
-    {-0.093573,-1.813165,-0.121184,-0.222427,-0.28},
-    {2.004913,1.299282,0.426447,-0.251573,-0.28}
+    {1.454214,1.158155,0.062893,-0.153398,0.58},
+    {0.11,-1.7,0.1,-0.153398,0.58},
+    {0.11,-1.7,0.1,0.274583,0.58},
+    {0.793068,0.492408,1.652097,0.274583,0.58},
+    {-0.444854,-0.699495,1.665903,0.274583,0.58},
+    {0.06,-1.63,0.21,0.274583,0.58},
+    {0.06,-1.63,0.21,-0.564505,0.58},
+    {-0.444854,-0.699495,1.665903,0.274583,0.58},
+    {1.454214,1.158155,0.062893,-0.153398,0.58}
   };
 
   sleep(1);
 
-  int mode = -1;
+  int mode = 0;//-1;
   int moveStep = 0;
-  bool moveState = false;
-  bool flagStart = false;
+  bool moveState = true;//false;
+  bool flagStart = true;//false;
   ros::Time sleepTime = ros::Time::now();
 
   arm.armPos(hoge[0]);
-  //odome.robotPos(1.0,0.7,0.0);
+  //odome.robotPos(0.0,2.0,0.0);
+  //cout <<atan2f(0.0,1.0)<<endl;
+  //odome.robotPos(-0.5,-0.1,0.0);
+  //odome.robotPos(0.5,0.0,0.0);
+  //odome.robotPos(-0.5,0.0,0.0);
+  //odome.postureSet(0.9);
+
+  /*while(ros::ok()){
+    ros::spinOnce();
+    if(!arm.moveCheck() && !odome.moveCheck() && !flagStart){
+      sleepTime = ros::Time::now();
+      flagStart = true;
+    }
+
+    if((ros::Time::now() - sleepTime >= ros::Duration(5.0) && flagStart) || moveStep == 7){
+      flagStart = false;
+
+      switch (moveStep) {
+        case 0:
+        arm.armPos(hoge[moveStep]);
+        odome.postureSet(M_PI / 4.0);
+        moveStep++;
+        break;
+
+        case 1:
+        arm.armPos(hoge[moveStep]);
+        moveStep++;
+        break;
+
+        case 2:
+        arm.armPos(hoge[moveStep]);
+        moveStep++;
+        break;
+
+        case 3:
+        arm.armPos(hoge[moveStep]);
+        moveStep++;
+        break;
+
+        case 4:
+        arm.armPos(hoge[moveStep]);
+        odome.postureSet(0.0);
+        moveStep++;
+        break;
+      }
+    }
+
+    odome.cycle();
+    arm.cycle();
+    talk.cycle();
+    faceCheck.cycle();
+    if(moveStep == 5){
+      moveStep = 0;
+      moveState = false;
+      mode = -1;
+      break;
+    }
+  }*/
 
   while(ros::ok()){
     ros::spinOnce();
@@ -55,10 +124,26 @@ int main(int argc, char **argv){
 
         if((ros::Time::now() - sleepTime >= ros::Duration(1.0) && flagStart) || moveStep == 7){
           flagStart = false;
-          switch (moveStep) {
+          switch (moveStep){
+            case 0:
+            odome.robotPos(0.2,0.0,0.0);
+            moveStep++;
+            break;
+
+            case 1:
+            odome.robotPos(0.0,0.0,0.0);
+            moveStep++;
+            break;
+
+            case 2:
+            moveStep = 0;
+            break;
+          }//*/
+
+          /*switch (moveStep) {
             case 0:
             arm.armPos(hoge[moveStep]);
-            odome.postureSet(M_PI);
+            odome.postureSet(M_PI / 4.0);
             sound.playSound(3);
             moveStep++;
             break;
@@ -85,7 +170,7 @@ int main(int argc, char **argv){
             break;
 
             case 5:
-            arm.armPos(hoge[moveStep]);
+            odome.robotPos(0.2,0.0,0.0);
             moveStep++;
             break;
 
@@ -99,21 +184,44 @@ int main(int argc, char **argv){
             break;
 
             case 8:
-            arm.armPos(hoge[moveStep-2]);
+            arm.armPos(hoge[moveStep-3]);
             moveStep++;
             break;
 
             case 9:
-            arm.armPos(hoge[moveStep-2]);
+            arm.armPos(hoge[moveStep-3]);
             moveStep++;
             break;
 
             case 10:
+            arm.armPos(hoge[moveStep-3]);
+            moveStep++;
+            break;
+
+            case 11:
+            odome.robotPos(0.0,0.0,0.0);
+            moveStep++;
+            break;
+
+            case 12:
+            arm.armPos(hoge[moveStep-4]);
+            moveStep++;
+            break;
+
+            case 13:
+            odome.robotPos(0.0,2.0,0.0);
+            break;
+
+            case 14:
+            sound.playSound(0);
+            break;
+
+            case 15:
             moveStep = 0;
             moveState = false;
             mode = -1;
             break;
-          }
+          }//*/
         }
 
       }else{
@@ -127,7 +235,7 @@ int main(int argc, char **argv){
       }else{
         if(talk.voiceCheck() == 3)moveState = true;
       }
-    }//*/
+    }
 
     odome.cycle();
     arm.cycle();
@@ -135,9 +243,10 @@ int main(int argc, char **argv){
     faceCheck.cycle();
 
     //printf("\n");
+    //cout << "moveState" << moveState  << endl;
     //if(talk.voiceCheck() != -1)cout << talk.voiceCheck() << endl;
-    cout << "moveState" << moveState <<" mode:" << mode <<" moveStep:" << moveStep << " move:" << arm.moveCheck() << endl;
-    //cout << ros::Time::now() << endl;
+    //cout << "moveState" << moveState <<" mode:" << mode <<" moveStep:" << moveStep << " move:" << arm.moveCheck() << endl;
+    //cout << "arm:"<< arm.moveCheck() << " odome:"<< odome.moveCheck()<< endl;
 
     loop_rate.sleep();
   }

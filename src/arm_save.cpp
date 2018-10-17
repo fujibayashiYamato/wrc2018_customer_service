@@ -6,9 +6,15 @@
 #include <geometry_msgs/Twist.h>
 #include <vector>
 #include <math.h>
+#include <iostream>
 #include <sstream>
 #include <kobuki_msgs/Sound.h>
 #include <sensor_msgs/JointState.h>
+#include <fstream>
+
+//using namespace std;
+
+#define VEL 1.0
 
 void bumperCallback(const kobuki_msgs::BumperEvent::ConstPtr& msg);
 void jointCallback(const sensor_msgs::JointState::ConstPtr& msg);
@@ -40,26 +46,36 @@ int main(int argc, char **argv)
   twist.angular.y = 0.0;
   twist.angular.z = 0.0;
 
+  std::ofstream fout;
+  std::string str;
+  fout.open("/home/demulab/catkin_ws/src/wrc2018_customer_service/data.txt");
+
   while(ros::ok()){
     if(oldNum[1] == 1 && num[1] == 0){
       num[1] = 1;
+      str = "{" + std::to_string(value[0]) + "," + std::to_string(value[1]) + "," + std::to_string(value[2]) + "," + std::to_string(value[3]) + "," + std::to_string(value[4]) + "}" + " angle:" + std::to_string(angle);
       ROS_INFO("[%f,%f,%f,%f,%f] angle:%f",value[0],value[1],value[2],value[3],value[4],angle);
+      fout << str << std::endl;
     }
 
+    //std::cout << num[0] << " : " << num[2] << std::endl;
+
     if(num[0] != oldNum[0]){
-      twist.angular.z = 0.5 * num[0];
+      twist.angular.z = VEL * num[0];
       num[0] = oldNum[0];
       pub.publish(twist);
     }
 
     if(num[2] != oldNum[2]){
-      twist.angular.z = -0.5 * num[0];
+      twist.angular.z = -VEL * num[2];
       num[2] = oldNum[2];
       pub.publish(twist);
     }
 
     ros::spinOnce();
   }
+
+  fout.close();
 
   return 0;
 }

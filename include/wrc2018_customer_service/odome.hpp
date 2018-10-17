@@ -14,9 +14,10 @@
 #include <kobuki_msgs/Sound.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/PoseWithCovariance.h>
+#include <tf/transform_broadcaster.h>
 
-#define ANGLE_VEL_MAX 1.5
-#define ANGLE_PGEIN 8.0
+#define ANGLE_VEL_MAX 2.0
+#define ANGLE_PGEIN 10.0
 
 #define DIST_VEL_MAX 0.1
 #define DIST_PGEIN 2.0
@@ -34,15 +35,20 @@ class Odome
 public:
   Odome(ros::NodeHandle *n);
   void cycle();
+  void reset();
   void robotPos(float x,float y,float angle);
   void postureSet(float angle);
   bool moveCheck();
 private:
   bool robotMove;
+  bool rev;
   int angleCount;
   int mode;
   float diffAngle[2];
   float targetAngle;
+  float targetDist;
+  float angleValue;
+  float distValue;
   Pos robotOdome;
   Pos targetOdome;
   ros::Time stopTime;
@@ -51,6 +57,10 @@ private:
   ros::Subscriber sub;
   ros::Publisher pub;
   void odomeCallback(const nav_msgs::Odometry::ConstPtr& msg);
+  void angleValueSet(float value);
+  void distValueSet();
+  bool deffAngle(float value);
+  bool deffDist();
 };
 
 Odome::Odome(ros::NodeHandle *n):
@@ -59,17 +69,21 @@ sub(n->subscribe("odom", 1000, &Odome::odomeCallback,this)),
 pub(n->advertise<geometry_msgs::Twist>("mobile_base/commands/velocity", 1000))
 {
   robotMove = false;
+  rev = false;
   angleCount = 0;
   mode = 0;
   diffAngle[0] = 0.0;
   diffAngle[1] = 0.0;
   targetAngle = 0.0;
+  targetDist = 0.0;
   robotOdome.angle = 0.0;
   robotOdome.x = 0.0;
   robotOdome.y = 0.0;
   targetOdome.angle = 0.0;
   targetOdome.x = 0.0;
   targetOdome.y = 0.0;
+  angleValue = 0.0;
+  distValue = 0.0;
   twist.linear.x = 0.0;
   twist.linear.y = 0.0;
   twist.linear.z = 0.0;
@@ -78,26 +92,56 @@ pub(n->advertise<geometry_msgs::Twist>("mobile_base/commands/velocity", 1000))
   twist.angular.z = 0.0;
 }
 
+void Odome::reset()
+{
+  robotMove = false;
+  rev = false;
+  mode = 0;
+  targetAngle = 0.0;
+  targetDist = 0.0;
+  targetOdome.angle = 0.0;
+  targetOdome.x = 0.0;
+  targetOdome.y = 0.0;
+  angleValue = 0.0;
+  distValue = 0.0;
+  twist.linear.x = 0.0;
+  twist.linear.y = 0.0;
+  twist.linear.z = 0.0;
+  twist.angular.x = 0.0;
+  twist.angular.y = 0.0;
+  twist.angular.z = 0.0;
+
+}
+
 void Odome::odomeCallback(const nav_msgs::Odometry::ConstPtr& msg)
 {
+  tf::Quaternion quat;//入力値
+  quat[0] = msg->pose.pose.orientation.x;
+  quat[1] = msg->pose.pose.orientation.y;
+  quat[2] = msg->pose.pose.orientation.z;
+  quat[3] = msg->pose.pose.orientation.w;
+  double r,p,y;//出力値
+  tf::Matrix3x3(quat).getRPY(r, p, y);
+  //cout << "r:" << r << " p:" << p << " y:"<< y <<endl;
+
   diffAngle[0] = diffAngle[1];
-  diffAngle[1] = msg->pose.pose.orientation.z;
-  if(diffAngle[0] - diffAngle[1] >= 1)angleCount++;
-  else if(diffAngle[0] - diffAngle[1] <= -1)angleCount--;
-  robotOdome.angle = (2.0 * M_PI)*angleCount +  msg->pose.pose.orientation.z * M_PI;
+  diffAngle[1] = y;
+  if(diffAngle[0] - diffAngle[1] >= M_PI)angleCount++;
+  else if(diffAngle[0] - diffAngle[1] <= -M_PI)angleCount--;
+  robotOdome.angle = (2.0 * M_PI)*angleCount +  y;
 
   robotOdome.x = msg->pose.pose.position.x;
   robotOdome.y = msg->pose.pose.position.y;
+  //cout << msg->pose.pose.position.x << " : " << msg->pose.pose.position.y <<" : " <<robotOdome.angle << " : " << y <<endl;
 }
 
 void Odome::robotPos(float x,float y,float angle)
 {
   targetOdome.x = x;
   targetOdome.y = y;
-  if(fabs(targetOdome.x - robotOdome.x) >= 0.02 && fabs(targetOdome.y - robotOdome.y) >= 0.02)targetAngle = atan2f(y,x);
-  else targetAngle = robotOdome.angle;
   targetOdome.angle = angle;
   robotMove = true;
+  //cout << "targetOdome.x:"<< targetOdome.x << " targetOdome.y:"<<targetOdome.y<<" robotOdome.x:"<<robotOdome.x<<" robotOdome.y;"<<robotOdome.y<<" targetAngle:" << targetAngle << endl;
 }
 
 void Odome::postureSet(float angle)
@@ -110,65 +154,95 @@ bool Odome::moveCheck()
   return robotMove;
 }
 
+void Odome::angleValueSet(float value)
+{
+  float target;
+  if(rev)target =  -(M_PI - fabs(value)) * (value/fabs(value));
+  else target = value;
+
+  angleValue = (target - robotOdome.angle)*ANGLE_PGEIN;
+  if(angleValue >= ANGLE_VEL_MAX)angleValue = ANGLE_VEL_MAX;
+  else if(angleValue <= -ANGLE_VEL_MAX)angleValue = -ANGLE_VEL_MAX;
+
+  twist.angular.z = angleValue;
+}
+
+void Odome::distValueSet()
+{
+  if(rev)distValue = -(hypotf(targetOdome.x - robotOdome.x,targetOdome.y - robotOdome.y))* DIST_PGEIN;
+  else distValue = (hypotf(targetOdome.x - robotOdome.x,targetOdome.y - robotOdome.y))* DIST_PGEIN;
+
+  if(distValue >= DIST_VEL_MAX)distValue = DIST_VEL_MAX;
+  else if(distValue <= -DIST_VEL_MAX)distValue = -DIST_VEL_MAX;
+  twist.linear.x = distValue;
+}
+
+bool Odome::deffAngle(float value){
+  float target;
+  if(rev)target =  -(M_PI - fabs(value)) * (value/fabs(value));
+  else target = value;
+
+  return (fabs(target - robotOdome.angle) >= 0.02);
+}
+
+bool Odome::deffDist()
+{
+  return (hypotf(targetOdome.x - robotOdome.x,targetOdome.y - robotOdome.y) >= 0.02);
+}
+
 void Odome::cycle(){
   if(robotMove){
-    float angleP;
-    float distP;
-    switch (mode) {
-    case 0:
-      angleP = (targetAngle - robotOdome.angle)*ANGLE_PGEIN;
-      if(angleP >= ANGLE_VEL_MAX)angleP = ANGLE_VEL_MAX;
-      else if(angleP <= -ANGLE_VEL_MAX)angleP = -ANGLE_VEL_MAX;
-      if(fabs(targetAngle - robotOdome.angle) >= 0.01)stopTime = ros::Time::now();
-      else if(ros::Time::now() - stopTime >= ros::Duration(1.0))mode++;
-      twist.linear.x = 0.0;
-      twist.angular.z = angleP;
-      break;
+    //cout << "targetOdome.x:"<< targetOdome.x << " targetOdome.y:"<<targetOdome.y<<" robotOdome.x:"<<robotOdome.x<<" robotOdome.y;"<<robotOdome.y<<" targetAngle:" << targetAngle <<" rev:"<<rev<< endl;
+    switch (mode){
+      case 0:
+        //if(targetOdome.y == 0.0)targetAngle = 0.0;
+        if(deffDist())targetAngle = atan2f(targetOdome.y - robotOdome.y,targetOdome.x - robotOdome.x);
+        else targetAngle = robotOdome.angle;
 
-    case 1:
-      targetAngle = atan2f(targetOdome.y - robotOdome.y,targetOdome.x - robotOdome.x);
-      angleP = (targetAngle - robotOdome.angle)*ANGLE_PGEIN;
+        if(fabs(targetAngle - robotOdome.angle) >= M_PI * 3.0 / 5.0)rev = true;
+        else rev = false;
 
-      distP = hypotf(targetOdome.x - robotOdome.x,targetOdome.y - robotOdome.y) * DIST_PGEIN;
+        twist.linear.x = 0.0;
+        mode++;
+        break;
 
-      if(fabs(targetAngle - robotOdome.angle) >= M_PI/2.0){
-        angleP = ((targetAngle - robotOdome.angle) - M_PI)*ANGLE_PGEIN;
-        distP = -distP;
+      case 1:
+        angleValueSet(targetAngle);
+
+        if(deffAngle(targetAngle))stopTime = ros::Time::now();
+        else if(ros::Time::now() - stopTime >= ros::Duration(1.0)){
+          mode++;
+          twist.linear.x = 0.0;
+          twist.angular.z = 0.0;
+        }
+        break;
+
+      case 2:
+        targetAngle = atan2f(targetOdome.y - robotOdome.y,targetOdome.x - robotOdome.x);
+
+        /*if(fabs(targetAngle - robotOdome.angle) >= M_PI * 3.0 / 5.0)rev = true;
+        else rev = false;*/
+
+        angleValueSet(targetAngle);
+        distValueSet();
+
+        if(deffDist())stopTime = ros::Time::now();
+        else if(ros::Time::now() - stopTime >= ros::Duration(1.0)){
+          mode++;
+          rev = false;
+          twist.linear.x = 0.0;
+          twist.angular.z = 0.0;
+        }
+        break;
+
+      case 3:
+        angleValueSet(targetOdome.angle);
+        if(deffAngle(targetOdome.angle))stopTime = ros::Time::now();
+        else if(ros::Time::now() - stopTime >= ros::Duration(1.0))reset();
+        break;
       }
 
-      if(angleP >= ANGLE_VEL_MAX)angleP = ANGLE_VEL_MAX;
-      else if(angleP <= -ANGLE_VEL_MAX)angleP = -ANGLE_VEL_MAX;
-
-      if(distP >= DIST_VEL_MAX)distP = DIST_VEL_MAX;
-      else if(distP <= -DIST_VEL_MAX)distP = -DIST_VEL_MAX;
-
-      if(fabs(targetOdome.x - robotOdome.x) >= 0.02 && fabs(targetOdome.y - robotOdome.y) >= 0.02)stopTime = ros::Time::now();
-      else if(ros::Time::now() - stopTime >= ros::Duration(1.0))mode++;
-
-      twist.linear.x = distP;
-      twist.angular.z = angleP;//*/
-      //mode++;
-      break;
-
-    case 2:
-      angleP = (targetOdome.angle - robotOdome.angle)*ANGLE_PGEIN;
-      if(angleP >= ANGLE_VEL_MAX)angleP = ANGLE_VEL_MAX;
-      else if(angleP <= -ANGLE_VEL_MAX)angleP = -ANGLE_VEL_MAX;
-      if(fabs(targetOdome.angle - robotOdome.angle) >= 0.01)stopTime = ros::Time::now();
-      else if(ros::Time::now() - stopTime >= ros::Duration(1.0))mode++;
-
-      twist.linear.x = 0.0;
-      twist.angular.z = angleP;
-      break;
-
-    case 3:
-      robotMove = false;
-      mode = 0;
-      twist.angular.z = 0.0;
-      break;
-    }
-
-    pub.publish(twist);
+      pub.publish(twist);
   }
 }
 
