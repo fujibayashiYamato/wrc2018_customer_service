@@ -69,15 +69,26 @@ bool Arm::moveCheck(){return armMove;}
 
 void Arm::cycle(){
   if(armMove){
-    //pub.publish(dexArm);
     bool flag = true;
     for(int i = 0;i<5;i++){
       if(fabs(targetPos[i] - pos[i]) >= 0.05)flag = false;
-      //printf("[%f]",fabs(targetPos[i] - pos[i]));
     }
-    //printf("\n");
     if(flag)armMove = false;
   }
 }
+
+/*int main(){
+  //...
+
+  if(armMove){
+    bool flag = true;
+    for(int i = 0;i<5;i++){
+      if(fabs(targetPos[i] - pos[i]) >= 0.05)flag = false;
+    }
+    if(flag)armMove = false;
+  }
+
+  //...
+}*/
 
 #endif // ARM_HPP

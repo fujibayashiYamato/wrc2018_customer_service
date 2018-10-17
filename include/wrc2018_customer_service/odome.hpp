@@ -18,9 +18,10 @@
 
 #define ANGLE_VEL_MAX 2.0
 #define ANGLE_PGEIN 10.0
+#define ANGLE_IGEIN 0.05
 
-#define DIST_VEL_MAX 0.1
-#define DIST_PGEIN 2.0
+#define DIST_VEL_MAX 0.5
+#define DIST_PGEIN 1.0
 
 using namespace std;
 
@@ -44,11 +45,12 @@ private:
   bool rev;
   int angleCount;
   int mode;
-  float diffAngle[2];
   float targetAngle;
   float targetDist;
   float angleValue;
   float distValue;
+  float diffAngle[2];
+  float anglePID[3];
   Pos robotOdome;
   Pos targetOdome;
   ros::Time stopTime;
@@ -84,6 +86,9 @@ pub(n->advertise<geometry_msgs::Twist>("mobile_base/commands/velocity", 1000))
   targetOdome.y = 0.0;
   angleValue = 0.0;
   distValue = 0.0;
+  anglePID[0] = 0.0;
+  anglePID[1] = 0.0;
+  anglePID[2] = 0.0;
   twist.linear.x = 0.0;
   twist.linear.y = 0.0;
   twist.linear.z = 0.0;
@@ -160,11 +165,20 @@ void Odome::angleValueSet(float value)
   if(rev)target =  -(M_PI - fabs(value)) * (value/fabs(value));
   else target = value;
 
-  angleValue = (target - robotOdome.angle)*ANGLE_PGEIN;
+
+  anglePID[0] = (target - robotOdome.angle) * ANGLE_PGEIN;
+  anglePID[1] += (target - robotOdome.angle) * ANGLE_IGEIN;
+  if(anglePID[1] >= 0.3)anglePID[1] = 0.3;
+  else if(anglePID[1] <= -0.3)anglePID[1] = -0.3;
+
+  angleValue = anglePID[0] + anglePID[1]  + anglePID[2];
+
   if(angleValue >= ANGLE_VEL_MAX)angleValue = ANGLE_VEL_MAX;
   else if(angleValue <= -ANGLE_VEL_MAX)angleValue = -ANGLE_VEL_MAX;
 
   twist.angular.z = angleValue;
+
+  cout << "P:" << anglePID[0] << " I:" << anglePID[1] <<" D:" << anglePID[2] << endl;
 }
 
 void Odome::distValueSet()

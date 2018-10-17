@@ -71,7 +71,7 @@ int main(int argc, char **argv){
       switch (moveStep) {
         case 0:
         arm.armPos(hoge[moveStep]);
-        odome.postureSet(M_PI / 4.0);
+        odome.postureSet(M_PI / 5.0);
         moveStep++;
         break;
 
@@ -108,7 +108,7 @@ int main(int argc, char **argv){
       mode = -1;
       break;
     }
-  }*/
+  }//*/
 
   while(ros::ok()){
     ros::spinOnce();
@@ -124,14 +124,14 @@ int main(int argc, char **argv){
 
         if((ros::Time::now() - sleepTime >= ros::Duration(1.0) && flagStart) || moveStep == 7){
           flagStart = false;
-          switch (moveStep){
+          /*switch (moveStep){
             case 0:
-            odome.robotPos(0.2,0.0,0.0);
+            odome.postureSet(M_PI/2.0);
             moveStep++;
             break;
 
             case 1:
-            odome.robotPos(0.0,0.0,0.0);
+            odome.postureSet(-M_PI/2.0);
             moveStep++;
             break;
 
@@ -140,10 +140,10 @@ int main(int argc, char **argv){
             break;
           }//*/
 
-          /*switch (moveStep) {
+          switch (moveStep) {
             case 0:
             arm.armPos(hoge[moveStep]);
-            odome.postureSet(M_PI / 4.0);
+            odome.postureSet(M_PI / 5.0);
             sound.playSound(3);
             moveStep++;
             break;
@@ -209,14 +209,21 @@ int main(int argc, char **argv){
             break;
 
             case 13:
-            odome.robotPos(0.0,2.0,0.0);
+            odome.robotPos(0.0,2.1,0.0);
+            moveStep++;
             break;
 
             case 14:
-            sound.playSound(0);
+            odome.robotPos(0.75,2.1,0.0);
+            moveStep++;
             break;
 
             case 15:
+            sound.playSound(0);
+            moveStep++;
+            break;
+
+            case 16:
             moveStep = 0;
             moveState = false;
             mode = -1;
